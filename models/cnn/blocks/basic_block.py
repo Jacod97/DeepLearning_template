@@ -25,8 +25,10 @@ class ResidualBlock(nn.Module):
 
         if stride != 1 or in_channels != out_channels * self.expansion:
             self.shortcut = nn.Sequential(
-                Conv(in_channels, out_channels * self.expansion, kernel_size=1,
-                     stride=stride, bias=False),
+                Conv(
+                    in_channels, out_channels * self.expansion, 
+                    kernel_size=1, stride=stride, bias=False
+                ),
                 Norm(out_channels * self.expansion),
             )
         else:
@@ -36,4 +38,41 @@ class ResidualBlock(nn.Module):
         out = self.relu(self.batch_norm1(self.conv1(x)))
         out = self.batch_norm2(self.conv2(out))
         out = out + self.shortcut(x)
+        return self.relu(out)
+
+class BottelneckBlock(nn.Module):
+    expansion = 4
+
+    def __init__(self, in_channels: int, out_channels: int, stride: int = 1, dim: int = 2):
+        super().__init__()
+        Conv = get_conv(dim)
+        Norm = get_norm(dim)
+
+        self.conv1 = Conv(in_channels, out_channels, kernel_size=1, bias=False)
+        self.batch_norm1 = Norm(out_channels)
+        self.conv2 = Conv(out_channels, out_channels, kernel_size=3, padding=1, bias=False)
+        self.batch_norm2 = Norm(out_channels)
+        self.conv3 = Conv(
+            out_channels, out_channels * self.expansion, 
+            kernel_size=1, bias=False
+        )
+        self.batch_norm3 = Norm(out_channels * self.expansion)
+        self.relu = nn.ReLU(inplace=True)
+
+        if stride != 1 or in_channels != out_channels * self.expansion:
+            self.shortuct = nn.Sequential(
+                Conv(
+                    in_channels, out_channels * self.expansion, 
+                    kernel_size=1, stride=1, bias=False
+                ),
+                Norm(out_channels*self.expansion)
+            )
+        else:
+            self.shortuct = nn.Identity()
+
+    def forward(self, x: Tensor):
+        out = self.relu(self.batch_norm1(self.conv1(x)))
+        out = self.relu(self.batch_norm2(self.conv2(out)))
+        out = self.batch_norm3(self.conv3(out))
+        out = out + self.shortuct(x)
         return self.relu(out)
