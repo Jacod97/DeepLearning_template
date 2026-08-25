@@ -1,0 +1,6 @@
+data_dir: ./data
+img_size: 128
+batch_size: 32
+val_ratio: 0.2
+num_workers: 2
+augment: true
